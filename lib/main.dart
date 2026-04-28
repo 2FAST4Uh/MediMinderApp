@@ -5,12 +5,19 @@ import 'providers/medicine_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
+import 'services/tts_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Initialize services
   final notificationService = NotificationService();
-  await notificationService.initialize();
+  final ttsService = TTSService();
+  
+  await Future.wait([
+    notificationService.initialize(),
+    ttsService.init(),
+  ]);
 
   runApp(
     MultiProvider(

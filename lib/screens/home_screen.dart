@@ -103,6 +103,32 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
     super.dispose();
   }
 
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text("Remove Medicine?", style: TextStyle(color: Colors.white)),
+        content: Text("Are you sure you want to remove ${widget.medicine.name}?", style: const TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Provider.of<MedicineProvider>(context, listen: false).removeMedicine(widget.medicine.id);
+              TTSService().speak("${widget.medicine.name} removed.");
+              Navigator.of(ctx).pop();
+            },
+            child: const Text("REMOVE", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<MedicineProvider>(context, listen: false);
@@ -133,11 +159,18 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(widget.medicine.name.toUpperCase(), 
-                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+                      overflow: TextOverflow.ellipsis),
                     Text(widget.medicine.formattedTime, 
-                      style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 16)),
+                      style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 14)),
                   ],
                 ),
+              ),
+              const SizedBox(width: 8),
+              // Delete Button
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 28),
+                onPressed: () => _confirmDelete(context),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -152,53 +185,60 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           const Divider(color: Color(0xFF444444)),
           
           _buildRow("Dosage:", Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               _roundBtn(Icons.remove, () => _updateDosage(context, widget.medicine, -1)),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(widget.medicine.dosage, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(widget.medicine.dosage, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               _roundBtn(Icons.add, () => _updateDosage(context, widget.medicine, 1)),
             ],
           )),
           
-          _buildRow("Frequency:", Row(
-            children: [widget.medicine.frequency].map((f) => _choiceChip(f, true)).toList(),
+          _buildRow("Frequency:", Flexible(
+            child: Text(widget.medicine.frequency, 
+              style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 14),
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis),
           )),
           
-          _buildRow("With meal:", Row(
-            children: [widget.medicine.mealInstruction].map((m) => _choiceChip(m, true)).toList(),
+          _buildRow("With meal:", Flexible(
+            child: Text(widget.medicine.mealInstruction, 
+              style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 14),
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis),
           )),
           
           _buildRow("Stock left:", Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                width: 100,
+                width: 70,
                 child: LinearProgressIndicator(
-                  value: widget.medicine.stock / 30,
+                  value: (widget.medicine.stock / 100).clamp(0.0, 1.0),
                   backgroundColor: const Color(0xFF444444),
                   valueColor: const AlwaysStoppedAnimation(Color(0xFF4C66EE)),
                 ),
               ),
-              const SizedBox(width: 12),
-              Text("${widget.medicine.stock} tabs", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               const SizedBox(width: 8),
-              const Text("refill", style: TextStyle(color: Color(0xFFAAAAAA), decoration: TextDecoration.underline)),
+              Text("${widget.medicine.stock}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(width: 4),
+              const Text("tabs", style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 12)),
             ],
           )),
           
-          // NOTES with Edit Functionality
           _buildRow("Notes:", Expanded(
             child: _isEditingNotes 
               ? TextField(
                   controller: _notesController,
                   autofocus: true,
                   style: const TextStyle(color: Color(0xFFFFD700), fontSize: 14),
-                  decoration: const InputDecoration(border: InputBorder.none),
+                  decoration: const InputDecoration(border: InputBorder.none, isDense: true),
                   onSubmitted: (val) {
                     setState(() => _isEditingNotes = false);
                     widget.medicine.notes = val;
@@ -209,7 +249,9 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
                   onTap: () => setState(() => _isEditingNotes = true),
                   child: Text(widget.medicine.notes, 
                     textAlign: TextAlign.right, 
-                    style: const TextStyle(color: Color(0xFFFFD700), fontSize: 14)
+                    style: const TextStyle(color: Color(0xFFFFD700), fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
           )),
@@ -219,13 +261,13 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(color: const Color(0xFFDDE3F9), borderRadius: BorderRadius.circular(20)),
-                child: const Text("Upcoming", style: TextStyle(color: Color(0xFF1A1C1E), fontWeight: FontWeight.bold)),
+                child: const Text("Upcoming", style: TextStyle(color: Color(0xFF1A1C1E), fontWeight: FontWeight.bold, fontSize: 11)),
               ),
               Row(
                 children: [
-                  _actionBtn("Snooze 10m", Colors.transparent, const Color(0xFFAAAAAA)),
+                  _actionBtn("Snooze", Colors.transparent, const Color(0xFFAAAAAA)),
                   const SizedBox(width: 8),
                   _actionBtn("Take now", const Color(0xFF4C66EE), Colors.white),
                 ],
@@ -239,11 +281,12 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
 
   Widget _buildRow(String label, Widget child) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+          Text(label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+          const SizedBox(width: 8),
           child,
         ],
       ),
@@ -254,34 +297,22 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
     return InkWell(
       onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white)),
-        child: Icon(icon, color: Colors.white, size: 20),
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white38)),
+        child: Icon(icon, color: Colors.white, size: 16),
       ),
-    );
-  }
-
-  Widget _choiceChip(String label, bool isSelected) {
-    return Container(
-      margin: const EdgeInsets.only(left: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF4C66EE) : const Color(0xFF333333),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(label, style: TextStyle(color: isSelected ? Colors.white : const Color(0xFFAAAAAA), fontSize: 12)),
     );
   }
 
   Widget _actionBtn(String label, Color bg, Color text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(20),
         border: bg == Colors.transparent ? Border.all(color: const Color(0xFF444444)) : null,
       ),
-      child: Text(label, style: TextStyle(color: text, fontWeight: FontWeight.bold)),
+      child: Text(label, style: TextStyle(color: text, fontWeight: FontWeight.bold, fontSize: 12)),
     );
   }
 
