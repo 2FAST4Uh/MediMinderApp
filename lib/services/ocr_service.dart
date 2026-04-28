@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 class OCRService {
   // IMPORTANT: Replace with your actual Gemini API Key
-  static const String _apiKey = 'AIzaSyCgmKe0quPqF_I78YNR2wBUaMlh00C3ENg';
+  static const String _apiKey = 'your api key';
   
   final ImagePicker _picker = ImagePicker();
   final TextRecognizer _legacyRecognizer = TextRecognizer();
