@@ -4,6 +4,7 @@ import '../providers/medicine_provider.dart';
 import '../models/medicine.dart';
 import 'add_medicine_screen.dart';
 import 'settings_screen.dart';
+import 'history_screen.dart';
 import '../services/tts_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,11 +17,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _pages = [
-    HomeContent(),
-    Center(child: Text("History", style: TextStyle(fontSize: 24, color: Colors.white))),
-    Center(child: Text("Family Connect", style: TextStyle(fontSize: 24, color: Colors.white))),
-    SettingsScreen(),
+  final List<Widget> _pages = [
+    const HomeContent(),
+    const HistoryScreen(),
+    const Center(child: Text("Family Connect", style: TextStyle(fontSize: 24, color: Colors.white))),
+    const SettingsScreen(),
   ];
 
   @override
@@ -167,7 +168,6 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Delete Button
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 28),
                 onPressed: () => _confirmDelete(context),
@@ -180,7 +180,12 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
                 ),
                 child: IconButton(
                   icon: Icon(Icons.check, color: widget.medicine.isTaken ? Colors.white : const Color(0xFF4C66EE)),
-                  onPressed: () => provider.toggleTaken(widget.medicine.id),
+                  onPressed: () {
+                    provider.toggleTaken(widget.medicine.id);
+                    if (!widget.medicine.isTaken) {
+                       TTSService().speak("Dose recorded.");
+                    }
+                  },
                 ),
               ),
             ],

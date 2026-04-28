@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/medicine_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/history_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
 import 'services/tts_service.dart';
@@ -10,7 +11,6 @@ import 'services/tts_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize services
   final notificationService = NotificationService();
   final ttsService = TTSService();
   
@@ -24,6 +24,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => MedicineProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => HistoryProvider()),
       ],
       child: const MediMinderApp(),
     ),

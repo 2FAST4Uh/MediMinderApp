@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/medicine.dart';
+import '../models/history_record.dart';
 import '../services/database_service.dart';
 
 class MedicineProvider with ChangeNotifier {
@@ -45,8 +46,21 @@ class MedicineProvider with ChangeNotifier {
   Future<void> toggleTaken(String id) async {
     final index = _medicines.indexWhere((med) => med.id == id);
     if (index != -1) {
-      _medicines[index].isTaken = !_medicines[index].isTaken;
-      await DatabaseService().updateMedicine(_medicines[index]);
+      final medicine = _medicines[index];
+      medicine.isTaken = !medicine.isTaken;
+      
+      // If marked as taken, record in history
+      if (medicine.isTaken) {
+        final record = HistoryRecord(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          medicineName: medicine.name,
+          dosage: medicine.dosage,
+          takenDateTime: DateTime.now(),
+        );
+        await DatabaseService().insertHistory(record);
+      }
+      
+      await DatabaseService().updateMedicine(medicine);
       notifyListeners();
     }
   }
