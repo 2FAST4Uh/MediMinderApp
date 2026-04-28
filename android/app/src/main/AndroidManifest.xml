@@ -33,16 +33,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Receiver for Boot Completed to reschedule alarms -->
-        <receiver android:name="com.dexterous.flutter_local_notifications.ScheduledNotificationBootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-            </intent-filter>
-        </receiver>
-
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

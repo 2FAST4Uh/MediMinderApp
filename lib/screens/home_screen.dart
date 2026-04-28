@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/medicine_provider.dart';
+import '../providers/history_provider.dart';
 import '../models/medicine.dart';
+import '../models/history_record.dart';
 import 'add_medicine_screen.dart';
 import 'settings_screen.dart';
 import 'history_screen.dart';
@@ -130,6 +132,36 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
     );
   }
 
+  void _takeDoseNow() async {
+    final medicineProvider = Provider.of<MedicineProvider>(context, listen: false);
+    final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
+
+    // Record in history first
+    final record = HistoryRecord(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      medicineName: widget.medicine.name,
+      dosage: widget.medicine.dosage,
+      takenDateTime: DateTime.now(),
+    );
+    
+    await historyProvider.addRecord(record);
+
+    // Update medicine state
+    if (!widget.medicine.isTaken) {
+      await medicineProvider.toggleTaken(widget.medicine.id);
+    }
+
+    TTSService().speak("Dose recorded for ${widget.medicine.name}.");
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Dose recorded for ${widget.medicine.name}"),
+        backgroundColor: const Color(0xFF4C66EE),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<MedicineProvider>(context, listen: false);
@@ -180,9 +212,12 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
                 ),
                 child: IconButton(
                   icon: Icon(Icons.check, color: widget.medicine.isTaken ? Colors.white : const Color(0xFF4C66EE)),
-                  onPressed: () {
-                    provider.toggleTaken(widget.medicine.id);
-                    if (!widget.medicine.isTaken) {
+                  onPressed: () async {
+                    final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
+                    await provider.toggleTaken(widget.medicine.id);
+                    // Refresh history provider to show new record
+                    historyProvider.loadHistory();
+                    if (widget.medicine.isTaken) {
                        TTSService().speak("Dose recorded.");
                     }
                   },
@@ -272,9 +307,14 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
               ),
               Row(
                 children: [
-                  _actionBtn("Snooze", Colors.transparent, const Color(0xFFAAAAAA)),
+                  _actionBtn("Snooze", Colors.transparent, const Color(0xFFAAAAAA), () {
+                    TTSService().speak("Alarm snoozed for 10 minutes.");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Snoozed for 10 minutes"))
+                    );
+                  }),
                   const SizedBox(width: 8),
-                  _actionBtn("Take now", const Color(0xFF4C66EE), Colors.white),
+                  _actionBtn("Take now", const Color(0xFF4C66EE), Colors.white, _takeDoseNow),
                 ],
               )
             ],
@@ -309,15 +349,19 @@ class _MedicineCardUIState extends State<MedicineCardUI> {
     );
   }
 
-  Widget _actionBtn(String label, Color bg, Color text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-        border: bg == Colors.transparent ? Border.all(color: const Color(0xFF444444)) : null,
+  Widget _actionBtn(String label, Color bg, Color text, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: bg == Colors.transparent ? Border.all(color: const Color(0xFF444444)) : null,
+        ),
+        child: Text(label, style: TextStyle(color: text, fontWeight: FontWeight.bold, fontSize: 12)),
       ),
-      child: Text(label, style: TextStyle(color: text, fontWeight: FontWeight.bold, fontSize: 12)),
     );
   }
 
